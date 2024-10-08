@@ -1,22 +1,23 @@
+# flake8: noqa
+import os
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+from django.core.management.utils import get_random_secret_key
+from dotenv import load_dotenv
+
+load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+DEFAULT_DB_PORT = 5432
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
+SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
+SERVER_IP = os.getenv('SERVER_IP')
+SERVER_DOMAIN = os.getenv('SERVER_DOMAIN')
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-&eb=7d0@a1np=+t++cvzayx#hw+^b!0cbohfxu5&odytl9_8v_'
+DEBUG = bool(os.getenv('DEBUG'))
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
-
-# Application definition
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', SERVER_IP, SERVER_DOMAIN]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -25,6 +26,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_filters',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'djoser',
+    'users.apps.UsersConfig',
+    'recipes.apps.RecipesConfig',
+    'api.apps.ApiConfig',
 ]
 
 MIDDLEWARE = [
@@ -58,9 +66,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'foodgram_backend.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -68,9 +73,24 @@ DATABASES = {
     }
 }
 
+# POSTGRES_DATABASE = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('POSTGRES_DB', 'django'),
+#         'USER': os.getenv('POSTGRES_USER', 'django'),
+#         'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+#         'HOST': os.getenv('DB_HOST', ''),
+#         'PORT': os.getenv('DB_PORT', DEFAULT_DB_PORT)
+#     }
+# }
+# SQLITE_DATABASE = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+# DATABASES = SQLITE_DATABASE if bool(os.getenv('SQLITE_BASE_CHOICE')) else POSTGRES_DATABASE
 
-# Password validation
-# https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -88,10 +108,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/3.2/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-RU'
 
 TIME_ZONE = 'UTC'
 
@@ -102,12 +119,47 @@ USE_L10N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.2/howto/static-files/
-
 STATIC_URL = '/static/'
+STATIC_ROOT = '/collected_static'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
+MEDIA_URL = '/media/'
+MEDIA_ROOT = '/media'
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '5000/hour',
+        'anon': '1000/hour',
+    },
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 6,
+}
+
+AUTH_USER_MODEL = 'users.FoodgramUser'
+
+DJOSER = {
+    'LOGIN_FIELD': "email",
+    'SERIALIZERS': {
+        'user_create': 'users.serializers.FoodgramUserCreateSerializer',
+        'user': 'users.serializers.FoodgramUserSerializer',
+        'current_user': 'users.serializers.FoodgramUserSerializer',
+    },
+    'HIDE_USERS': False,
+    "PERMISSIONS": {
+        "user": ["rest_framework.permissions.AllowAny"],
+        "user_list": ["rest_framework.permissions.AllowAny"],
+        'current_user': ['djoser.permissions.CurrentUserOrAdmin'],
+    },
+}
