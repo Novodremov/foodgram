@@ -3,7 +3,7 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 from recipes.models import (Favorite, Ingredient, IngredientRecipe, Recipe,
-                            ShortenedURL, Shopping_cart, Subscription, Tag)
+                            ShortenedURL, ShoppingCart, Subscription, Tag)
 from users.serializers import FoodgramUserSerializer
 
 
@@ -96,7 +96,7 @@ class RecipeGetSerializer(serializers.ModelSerializer):
     def get_is_in_shopping_cart(self, obj):
         user = self.context.get('request').user
         if user.is_authenticated:
-            return Shopping_cart.objects.filter(
+            return ShoppingCart.objects.filter(
                 user=user, recipe=obj).exists()
         return False
 

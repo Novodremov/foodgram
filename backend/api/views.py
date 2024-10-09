@@ -2,6 +2,7 @@ from collections import defaultdict
 
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
+from django.db.models import F
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -13,6 +14,7 @@ from rest_framework.permissions import (IsAuthenticated,
 from rest_framework.response import Response
 
 from api.filters import IngredientFilter, RecipeFilter
+from api.mixins import TagIngredientMixin
 from api.paginators import FoodgramPageNumberPagination
 from api.permissions import IsAuthorOrIsAdminOrReadOnly
 from api.serializers import (IngredientGetSerializer,
@@ -23,30 +25,26 @@ from api.serializers import (IngredientGetSerializer,
                              ShortenedURLSerializer,
                              TagGetSerializer,)
 from recipes.models import (Ingredient, IngredientRecipe, Favorite, Recipe,
-                            Shopping_cart, ShortenedURL, Tag)
+                            ShoppingCart, ShortenedURL, Tag)
 
 
 User = get_user_model()
 
 
-class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+class IngredientViewSet(TagIngredientMixin, viewsets.ReadOnlyModelViewSet):
     """Вьюсет для операций с ингредиентами."""
 
     queryset = Ingredient.objects.all()
     serializer_class = IngredientGetSerializer
-    pagination_class = None
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
-    permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
-class TagViewSet(viewsets.ReadOnlyModelViewSet):
+class TagViewSet(TagIngredientMixin, viewsets.ReadOnlyModelViewSet):
     """Вьюсет для операций с тегами."""
 
     queryset = Tag.objects.all()
     serializer_class = TagGetSerializer
-    pagination_class = None
-    permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -109,6 +107,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             try:
                 Favorite.objects.create(user=request.user,
                                         recipe=recipe)
+                recipe.favorite_count = F('favorite_count') + 1
+                recipe.save(update_fields=['favorite_count'])
                 return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
             except IntegrityError:
@@ -121,6 +121,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'В избранном нет такого рецепта.'},
                             status=status.HTTP_400_BAD_REQUEST)
         favorite.delete()
+        recipe.favorite_count = F('favorite_count') - 1
+        recipe.save(update_fields=['favorite_count'])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True,
@@ -132,15 +134,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             serializer = RecipeShoppingCartSerializer(recipe)
             try:
-                Shopping_cart.objects.create(user=request.user,
-                                             recipe=recipe)
+                ShoppingCart.objects.create(user=request.user,
+                                            recipe=recipe)
                 return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
             except IntegrityError:
                 return Response(
                     {"error": "Рецепт уже есть в списке покупок."},
                     status=status.HTTP_400_BAD_REQUEST)
-        shopping_cart_recipe = Shopping_cart.objects.filter(
+        shopping_cart_recipe = ShoppingCart.objects.filter(
             user=request.user,
             recipe=recipe).first()
         if not shopping_cart_recipe:
@@ -157,7 +159,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         '''Экшн-метод для загрузки списка покупок ингредиентов.'''
 
         user = request.user
-        shopping_cart_items = Shopping_cart.objects.filter(
+        shopping_cart_items = ShoppingCart.objects.filter(
             user=user).prefetch_related('recipe__ingredients')
         ingredients = defaultdict(lambda: {'amount': 0, 'unit': None})
 

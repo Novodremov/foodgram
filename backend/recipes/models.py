@@ -101,6 +101,10 @@ class Recipe(models.Model):
         verbose_name='Время приготовления в минутах',
         validators=(MinValueValidator(MIN_COOKING_TIME),)
     )
+    favorite_count = models.IntegerField(
+        default=0,
+        verbose_name='Количество добавлений рецепта в избранное'
+    )
 
     class Meta:
         ordering = ('-pub_date',)
@@ -146,17 +150,26 @@ class IngredientRecipe(models.Model):
         return f'{self.recipe} - {self.ingredient}'
 
 
-class Favorite(models.Model):
-    '''Модель, связывающая пользователя и рецепт (избранное).'''
+class UserRecipeModel(models.Model):
+    """Абстрактная модель для связи пользователя и рецепта."""
 
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE,
+        User,
+        on_delete=models.CASCADE,
         verbose_name='пользователь'
     )
     recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE,
+        Recipe,
+        on_delete=models.CASCADE,
         verbose_name='рецепт'
     )
+
+    class Meta:
+        abstract = True
+
+
+class Favorite(UserRecipeModel):
+    '''Модель, связывающая пользователя и рецепт (избранное).'''
 
     class Meta:
         constraints = (
@@ -173,19 +186,8 @@ class Favorite(models.Model):
         return f'{self.recipe} в любимых рецептах {self.user}'
 
 
-class Shopping_cart(models.Model):
+class ShoppingCart(UserRecipeModel):
     '''Модель, связывающая пользователя и рецепт (списки покупок).'''
-
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name='пользователь'
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        verbose_name='рецепт'
-    )
 
     class Meta:
         constraints = (
