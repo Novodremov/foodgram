@@ -1,9 +1,9 @@
-from collections import defaultdict
+import tempfile
 
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError
+from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
-from django.http import HttpResponse
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404, redirect
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -17,10 +17,10 @@ from api.mixins import TagIngredientMixin
 from api.paginators import FoodgramPageNumberPagination
 from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (IngredientGetSerializer,
-                             RecipeFavoriteSerializer,
                              RecipeGetSerializer,
                              RecipePostSerializer,
-                             RecipeShoppingCartSerializer,
+                             RecipeFavoritePostSerializer,
+                             RecipeShoppingCartPostSerializer,
                              ShortenedURLSerializer,
                              TagGetSerializer,)
 from recipes.models import (Ingredient, IngredientRecipe, Favorite, Recipe,
@@ -65,85 +65,37 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeGetSerializer
         return RecipePostSerializer
 
-    def perform_create(self, serializer):
-        recipe = serializer.save(author=self.request.user)
-        response_serializer = RecipeGetSerializer(
-            recipe,
-            context={'request': self.request}
-        )
-        return Response(response_serializer.data,
-                        status=status.HTTP_201_CREATED)
-
-    def perform_update(self, serializer):
-        recipe = serializer.save(author=self.request.user)
-        response_serializer = RecipeGetSerializer(
-            recipe,
-            context={'request': self.request}
-        )
-        return Response(response_serializer.data,
-                        status=status.HTTP_200_OK)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return self.perform_create(serializer)
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance,
-                                         data=request.data,
-                                         partial=True)
-        serializer.is_valid(raise_exception=True)
-        return self.perform_update(serializer)
+    def create_delete_object_for_recipe(self, request, id, model, serializer):
+        '''Общий метод для операций с моделями, связанными с рецептом.'''
+        recipe = get_object_or_404(Recipe, id=id)
+        if request.method == 'POST':
+            serializer = serializer(
+                data={'recipe': recipe.id},
+                context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        subj = model.objects.filter(user=request.user,
+                                    recipe=recipe).first()
+        if not subj:
+            return Response({'detail': 'В избранном нет такого рецепта.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        subj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True,
             methods=['post', 'delete'])
     def favorite(self, request, pk=None):
         '''Экшн-метод для добавление/удаления рецептов в избранное.'''
-        recipe = get_object_or_404(Recipe, id=pk)
-        if request.method == 'POST':
-            serializer = RecipeFavoriteSerializer(recipe)
-            try:
-                Favorite.objects.create(user=request.user,
-                                        recipe=recipe)
-                return Response(serializer.data,
-                                status=status.HTTP_201_CREATED)
-            except IntegrityError:
-                return Response(
-                    {"error": "Рецепт уже есть в избранном."},
-                    status=status.HTTP_400_BAD_REQUEST)
-        favorite = Favorite.objects.filter(user=request.user,
-                                           recipe=recipe).first()
-        if not favorite:
-            return Response({'detail': 'В избранном нет такого рецепта.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        favorite.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return self.create_delete_object_for_recipe(
+            request, pk, Favorite, RecipeFavoritePostSerializer)
 
     @action(detail=True,
             methods=['post', 'delete'])
     def shopping_cart(self, request, pk=None):
         '''Экшн-метод для добавление/удаления рецептов в список покупок.'''
-        recipe = get_object_or_404(Recipe, id=pk)
-        if request.method == 'POST':
-            serializer = RecipeShoppingCartSerializer(recipe)
-            try:
-                ShoppingCart.objects.create(user=request.user,
-                                            recipe=recipe)
-                return Response(serializer.data,
-                                status=status.HTTP_201_CREATED)
-            except IntegrityError:
-                return Response(
-                    {"error": "Рецепт уже есть в списке покупок."},
-                    status=status.HTTP_400_BAD_REQUEST)
-        shopping_cart_recipe = ShoppingCart.objects.filter(
-            user=request.user,
-            recipe=recipe).first()
-        if not shopping_cart_recipe:
-            return Response({'detail': 'В списке покупок нет такого рецепта.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        shopping_cart_recipe.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return self.create_delete_object_for_recipe(
+            request, pk, ShoppingCart, RecipeShoppingCartPostSerializer)
 
     @action(
         detail=False,
@@ -152,31 +104,36 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         '''Экшн-метод для загрузки списка покупок ингредиентов.'''
         user = request.user
-        shopping_cart_items = ShoppingCart.objects.filter(
-            user=user).prefetch_related('recipe__ingredients')
-        ingredients = defaultdict(lambda: {'amount': 0, 'unit': None})
+        ingredients = (
+            IngredientRecipe.objects.filter(
+                recipe__shopping_carts__user=user
+            )
+            .values(
+                'ingredient__name',
+                'ingredient__measurement_unit'
+            )
+            .annotate(amount=Sum('amount'))
+            .order_by('ingredient__name')
+        )
+        return self.writing_data(ingredients)
 
-        for item in shopping_cart_items:
-            recipe = item.recipe
-            for ingredient in recipe.ingredients.all():
-                ingredient_recipe = IngredientRecipe.objects.get(
-                    recipe=recipe,
-                    ingredient=ingredient)
-                ingredients[ingredient.name]['amount'] += (
-                    ingredient_recipe.amount)
-
-                if ingredients[ingredient.name]['unit'] is None:
-                    ingredients[ingredient.name]['unit'] = (
-                        ingredient.measurement_unit)
-
-        response = HttpResponse(content_type='text/plain')
+    def writing_data(self, ingredients):
+        '''Создание файла со списком покупок.'''
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix='.txt'
+        ) as tmp_file:
+            for item in ingredients:
+                ingredient_name = item['ingredient__name']
+                total_amount = item['amount']
+                unit = item['ingredient__measurement_unit']
+                tmp_file.write(
+                    f"{ingredient_name} ({unit}) — {total_amount}\n".encode(
+                        'utf-8'))
+            tmp_file_path = tmp_file.name
+        response = FileResponse(open(tmp_file_path, 'rb'),
+                                content_type='text/plain')
         response['Content-Disposition'] = (
             'attachment; filename="shopping_cart.txt"')
-
-        for ingredient_name, data in ingredients.items():
-            total_amount = data['amount']
-            unit = data['unit']
-            response.write(f"{ingredient_name} ({unit}) — {total_amount}\n")
         return response
 
     @action(detail=True,

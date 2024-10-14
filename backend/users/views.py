@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from api.paginators import FoodgramPageNumberPagination
-from api.serializers import SubscribeUserSerializer
+from api.serializers import SubscribeUserSerializer, SubscriptionSerializer
 from recipes.models import Subscription
 from users.serializers import AvatarPutSerializer
 
@@ -26,19 +26,17 @@ class UserViewSet(DjoserUserViewSet):
             permission_classes=(IsAuthenticated,))
     def subscribe(self, request, **kwargs):
         '''Экшн-метод для добавления/удаления подписок на пользователей.'''
-
         id = self.kwargs.get('id')
-        follower = request.user
         following = get_object_or_404(User, id=id)
         if request.method == 'POST':
-            serializer = SubscribeUserSerializer(following,
-                                                 data=request.data,
-                                                 context={'request': request})
+            serializer = SubscriptionSerializer(
+                data={'following': following.id},
+                context={'request': request})
             serializer.is_valid(raise_exception=True)
-            Subscription.objects.create(follower=follower,
-                                        following=following)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        subscription = Subscription.objects.filter(follower=follower,
+
+        subscription = Subscription.objects.filter(follower=request.user,
                                                    following=following).first()
         if not subscription:
             return Response({'detail': 'Подписка не найдена.'},
