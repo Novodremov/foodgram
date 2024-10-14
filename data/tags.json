@@ -1,0 +1,13 @@
+[{"name": "завтрак", "slug": "breakfast"},
+ {"name": "обед", "slug": "dinner"},
+ {"name": "ужин", "slug": "supper"},
+ {"name": "десерт", "slug": "desert"},
+ {"name": "суп", "slug": "soup"},
+ {"name": "салат", "slug": "salad"},
+ {"name": "второе", "slug": "main"},
+ {"name": "напиток", "slug": "drink"},
+ {"name": "вегетарианское", "slug": "vegetarian"},
+ {"name": "детям", "slug": "for-kids"},
+ {"name": "диетическое", "slug": "dietary"},
+ {"name": "постное", "slug": "lean"}
+]

@@ -19,6 +19,7 @@ class IngredientRecipeInline(admin.TabularInline):
     extra = 1
     verbose_name = 'Ингредиент для рецепта'
     fields = ('ingredient', 'amount',)
+    min_num = 1
 
 
 @admin.register(Recipe)
@@ -30,8 +31,12 @@ class RecipeAdmin(admin.ModelAdmin):
               'favorite_count',)
     readonly_fields = ('id', 'favorite_count',)
     filter_horizontal = ('tags',)
-    search_fields = ('author', 'name')
+    search_fields = ('author__username', 'name')
     list_filter = ('tags',)
+
+    @admin.display(description='Количество добавлений рецепта в избранное')
+    def favorite_count(self, obj):
+        return obj.favorites.count()
 
 
 @admin.register(Favorite)

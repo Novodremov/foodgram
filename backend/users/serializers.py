@@ -3,8 +3,6 @@ from djoser.serializers import UserCreateSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
-from recipes.models import Subscription
-
 
 User = get_user_model()
 
@@ -50,10 +48,8 @@ class FoodgramUserSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         follower = self.context.get('request').user
-        if follower.is_authenticated:
-            return Subscription.objects.filter(
-                follower=follower, following=obj).exists()
-        return False
+        return follower.is_authenticated and obj.followings.filter(
+            follower=follower).exists()
 
 
 class AvatarPutSerializer(serializers.ModelSerializer):

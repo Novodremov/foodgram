@@ -73,24 +73,23 @@ DATABASES = {
     }
 }
 
-# POSTGRES_DATABASE = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('POSTGRES_DB', 'django'),
-#         'USER': os.getenv('POSTGRES_USER', 'django'),
-#         'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-#         'HOST': os.getenv('DB_HOST', ''),
-#         'PORT': os.getenv('DB_PORT', DEFAULT_DB_PORT)
-#     }
-# }
-# SQLITE_DATABASE = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-# DATABASES = SQLITE_DATABASE if bool(os.getenv('SQLITE_BASE_CHOICE')) else POSTGRES_DATABASE
-
+POSTGRES_DATABASE = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'django'),
+        'USER': os.getenv('POSTGRES_USER', 'django'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': os.getenv('DB_PORT', DEFAULT_DB_PORT)
+    }
+}
+SQLITE_DATABASE = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+DATABASES = POSTGRES_DATABASE if os.getenv('POSTGRES_BASE_CHOICE', 'False').lower() == 'true' else SQLITE_DATABASE
 
 AUTH_PASSWORD_VALIDATORS = [
     {

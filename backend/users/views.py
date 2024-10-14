@@ -50,7 +50,6 @@ class UserViewSet(DjoserUserViewSet):
             methods=['get'])
     def subscriptions(self, request):
         '''Экшн-метод для получения списка подписок.'''
-
         followings = User.objects.filter(followings__follower=request.user)
         page = self.paginate_queryset(followings)
         serializer = SubscribeUserSerializer(page,
@@ -64,7 +63,6 @@ class UserViewSet(DjoserUserViewSet):
             permission_classes=[IsAuthenticated])
     def avatar(self, request):
         '''Экшн-метод для добавления/удаления аватара.'''
-
         user = request.user
         if request.method == 'PUT':
             if not request.data or 'avatar' not in request.data:
@@ -73,12 +71,10 @@ class UserViewSet(DjoserUserViewSet):
             serializer = AvatarPutSerializer(user,
                                              data=request.data,
                                              partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({'avatar': user.avatar.url},
-                                status=status.HTTP_200_OK)
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({'avatar': user.avatar.url},
+                            status=status.HTTP_200_OK)
         if user.avatar:
             user.avatar.delete(save=False)
             user.avatar = None
@@ -93,5 +89,4 @@ class UserViewSet(DjoserUserViewSet):
             )
     def me(self, request, *args, **kwargs):
         """Экшн-метод для получения данных о текущем пользователе."""
-
         return super().me(request, *args, **kwargs)

@@ -2,7 +2,6 @@ from collections import defaultdict
 
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.db.models import F
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -16,7 +15,7 @@ from rest_framework.response import Response
 from api.filters import IngredientFilter, RecipeFilter
 from api.mixins import TagIngredientMixin
 from api.paginators import FoodgramPageNumberPagination
-from api.permissions import IsAuthorOrIsAdminOrReadOnly
+from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (IngredientGetSerializer,
                              RecipeFavoriteSerializer,
                              RecipeGetSerializer,
@@ -51,11 +50,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет для операций с рецептами."""
 
     queryset = Recipe.objects.select_related(
-        "author").prefetch_related(
+        "author"
+    ).prefetch_related(
         "tags", "ingredients")
     http_method_names = ('get', 'post', 'patch', 'delete')
     permission_classes = (IsAuthenticatedOrReadOnly,
-                          IsAuthorOrIsAdminOrReadOnly,)
+                          IsAuthorOrReadOnly,)
     pagination_class = FoodgramPageNumberPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
@@ -100,15 +100,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
             methods=['post', 'delete'])
     def favorite(self, request, pk=None):
         '''Экшн-метод для добавление/удаления рецептов в избранное.'''
-
         recipe = get_object_or_404(Recipe, id=pk)
         if request.method == 'POST':
             serializer = RecipeFavoriteSerializer(recipe)
             try:
                 Favorite.objects.create(user=request.user,
                                         recipe=recipe)
-                recipe.favorite_count = F('favorite_count') + 1
-                recipe.save(update_fields=['favorite_count'])
                 return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
             except IntegrityError:
@@ -121,15 +118,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'В избранном нет такого рецепта.'},
                             status=status.HTTP_400_BAD_REQUEST)
         favorite.delete()
-        recipe.favorite_count = F('favorite_count') - 1
-        recipe.save(update_fields=['favorite_count'])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True,
             methods=['post', 'delete'])
     def shopping_cart(self, request, pk=None):
         '''Экшн-метод для добавление/удаления рецептов в список покупок.'''
-
         recipe = get_object_or_404(Recipe, id=pk)
         if request.method == 'POST':
             serializer = RecipeShoppingCartSerializer(recipe)
@@ -157,7 +151,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=(IsAuthenticated,))
     def download_shopping_cart(self, request):
         '''Экшн-метод для загрузки списка покупок ингредиентов.'''
-
         user = request.user
         shopping_cart_items = ShoppingCart.objects.filter(
             user=user).prefetch_related('recipe__ingredients')
@@ -192,7 +185,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=(IsAuthenticatedOrReadOnly,))
     def get_link(self, request, pk=None):
         '''Экшн-метод для создания коротких ссылок на рецепты.'''
-
         recipe = self.get_object()
         shortened_url = ShortenedURL.objects.filter(recipe=recipe).first()
         if not shortened_url:
@@ -209,7 +201,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 def redirect_from_short_url(request, short_url):
     '''Вью-функция для перенаправления с коротких ссылок на рецепты.'''
-
     shortened_url_instance = get_object_or_404(ShortenedURL,
                                                short_url=short_url)
     return redirect(shortened_url_instance.original_url)

@@ -13,6 +13,7 @@ class FoodgramUser(AbstractUser):
         max_length=MAX_USERNAME_LENGTH,
         unique=True,
         verbose_name='Логин',
+        # включил валидацию на 'me' в валидатор
         validators=[validate_username],
     )
     email = models.EmailField(
@@ -33,6 +34,9 @@ class FoodgramUser(AbstractUser):
         null=True,
         default=None
     )
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
     class Meta:
         ordering = ('username',)

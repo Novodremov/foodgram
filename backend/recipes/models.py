@@ -30,13 +30,18 @@ class Ingredient(models.Model):
     )
 
     class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=('name', 'measurement_unit'),
+                name='unique_ingredient_unit',
+            ),
+        )
         ordering = ('name',)
         verbose_name = 'ингредиент'
         verbose_name_plural = 'Ингредиенты'
-        # default_related_name = 'ingredients'
 
     def __str__(self):
-        return self.name[:STR_VIEW_LENGTH]
+        return f'{self.name[:STR_VIEW_LENGTH]} ({self.measurement_unit})'
 
 
 class Tag(models.Model):
@@ -53,13 +58,12 @@ class Tag(models.Model):
     )
 
     class Meta:
-        ordering = ('name',)
+        ordering = ('id',)
         verbose_name = 'тег'
         verbose_name_plural = 'Теги'
-        default_related_name = 'tags'
 
     def __str__(self):
-        return self.slug
+        return self.name
 
 
 class Recipe(models.Model):
@@ -101,10 +105,6 @@ class Recipe(models.Model):
         verbose_name='Время приготовления в минутах',
         validators=(MinValueValidator(MIN_COOKING_TIME),)
     )
-    favorite_count = models.IntegerField(
-        default=0,
-        verbose_name='Количество добавлений рецепта в избранное'
-    )
 
     class Meta:
         ordering = ('-pub_date',)
@@ -124,7 +124,6 @@ class IngredientRecipe(models.Model):
 
     ingredient = models.ForeignKey(
         Ingredient, on_delete=models.CASCADE,
-        related_name='ingredients_for_recipe',
         verbose_name='Ингредиент'
     )
     recipe = models.ForeignKey(
@@ -166,12 +165,13 @@ class UserRecipeModel(models.Model):
 
     class Meta:
         abstract = True
+        ordering = ('-id',)
 
 
 class Favorite(UserRecipeModel):
     '''Модель, связывающая пользователя и рецепт (избранное).'''
 
-    class Meta:
+    class Meta(UserRecipeModel.Meta):
         constraints = (
             models.UniqueConstraint(
                 fields=('user', 'recipe'),
@@ -189,7 +189,7 @@ class Favorite(UserRecipeModel):
 class ShoppingCart(UserRecipeModel):
     '''Модель, связывающая пользователя и рецепт (списки покупок).'''
 
-    class Meta:
+    class Meta(UserRecipeModel.Meta):
         constraints = (
             models.UniqueConstraint(
                 fields=('user', 'recipe'),
@@ -198,7 +198,7 @@ class ShoppingCart(UserRecipeModel):
         )
         verbose_name = 'список покупок'
         verbose_name_plural = 'рецепты в списке покупок'
-        default_related_name = 'shopping_cart'
+        default_related_name = 'shopping_carts'
 
     def __str__(self):
         return f'{self.recipe} в списке покупок у {self.user}'
@@ -220,7 +220,7 @@ class Subscription(models.Model):
         verbose_name='На кого подписан'
     )
 
-    class Meta:
+    class Meta(UserRecipeModel.Meta):
         constraints = [
             models.UniqueConstraint(
                 fields=('follower', 'following'),
@@ -238,12 +238,12 @@ class ShortenedURL(models.Model):
     '''Модель короткой ссылки.'''
 
     original_url = models.URLField(unique=True)
-    short_url = models.CharField(max_length=10,
+    short_url = models.CharField(max_length=NUMBER_OF_CHARS_FOR_SHORT_URL,
                                  unique=True)
     recipe = models.OneToOneField(Recipe,
                                   on_delete=models.CASCADE)
 
-    class Meta:
+    class Meta(UserRecipeModel.Meta):
         verbose_name = 'короткая ссылка'
         verbose_name_plural = 'короткие ссылки'
 
@@ -253,6 +253,7 @@ class ShortenedURL(models.Model):
         super().save(*args, **kwargs)
 
     def generate_short_url(self):
+        '''Генерация короткой ссылки.'''
         characters = ascii_letters + digits
         while True:
             short_url = ''.join(choices(characters,
