@@ -1,6 +1,8 @@
 # Проект "Фудграм"
 Проект «Фудграм» —  сайт, на котором пользователи могут публиковать свои рецепты, добавлять чужие рецепты в избранное и подписываться на публикации других авторов. Зарегистрированным пользователям доступен сервис «Список покупок», позволяющий создавать список продуктов, которые нужно купить для приготовления выбранных блюд. 
 
+![Workflow Status](https://github.com/Novodremov/foodgram/actions/workflows/main.yml/badge.svg)
+
 ## Использованные технологии:
 Бэкенд проекта написан на Python, с использованием фреймворка Django;
 Фронтэнд на JavaScript с использованием React.
@@ -127,9 +129,9 @@ sudo docker compose -f docker-compose.production.yml up -d --build
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
 ```
 
-- Заполните базу данных командой:
+- Заполните базу данных (загрузите фикстуры) командой:
 ```
-sudo docker compose -f docker-compose.production.yml exec backend python manage.py importcsv
+python manage.py loaddata ../data/foodgram_ingredients_tags_fixture.json
 ```
 
 - Соберите статику:
@@ -169,6 +171,11 @@ sudo docker compose -f docker-compose.production.yml down
 - /api/users/{id}/subscribe/ - подписаться на пользователя/отписаться от пользователя
 - /api/ingredients/ - получение списка ингредиентов
 - /api/ingredients/{id}/ - получение ингредиента
+
+Подробную информацию по эндпоинтам API можно посмотреть по адресу:
+```
+http://localhost/api/docs/
+```
 
 ### Автор:  
 *Лысов Алексей*

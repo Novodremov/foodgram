@@ -9,6 +9,9 @@ from users.validators import validate_username
 class FoodgramUser(AbstractUser):
     '''Кастомная модель пользователя.'''
 
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+
     username = models.CharField(
         max_length=MAX_USERNAME_LENGTH,
         unique=True,
@@ -34,9 +37,6 @@ class FoodgramUser(AbstractUser):
         null=True,
         default=None
     )
-
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
     class Meta:
         ordering = ('username',)

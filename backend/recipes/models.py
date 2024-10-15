@@ -58,7 +58,7 @@ class Tag(models.Model):
     )
 
     class Meta:
-        ordering = ('id',)
+        ordering = ('name',)
         verbose_name = 'тег'
         verbose_name_plural = 'Теги'
 
@@ -135,6 +135,7 @@ class IngredientRecipe(models.Model):
     )
 
     class Meta:
+        ordering = ('recipe',)
         constraints = (
             models.UniqueConstraint(
                 fields=('recipe', 'ingredient'),
@@ -165,7 +166,7 @@ class UserRecipeModel(models.Model):
 
     class Meta:
         abstract = True
-        ordering = ('-id',)
+        ordering = ('user',)
 
 
 class Favorite(UserRecipeModel):
@@ -221,6 +222,7 @@ class Subscription(models.Model):
     )
 
     class Meta(UserRecipeModel.Meta):
+        ordering = ('follower',)
         constraints = [
             models.UniqueConstraint(
                 fields=('follower', 'following'),
@@ -243,7 +245,7 @@ class ShortenedURL(models.Model):
     recipe = models.OneToOneField(Recipe,
                                   on_delete=models.CASCADE)
 
-    class Meta(UserRecipeModel.Meta):
+    class Meta:
         verbose_name = 'короткая ссылка'
         verbose_name_plural = 'короткие ссылки'
 

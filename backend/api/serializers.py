@@ -167,7 +167,6 @@ class RecipePostSerializer(serializers.ModelSerializer):
             recipe, ingredients_data, tags_data)
 
     def update(self, instance, validated_data):
-        validated_data['author'] = self.context.get('request').user
         ingredients_data = validated_data.pop('ingredients')
         tags_data = validated_data.pop('tags')
         super().update(instance, validated_data)
@@ -208,6 +207,7 @@ class RecipeShoppingCartGetSerializer(RecipeSubscribeSerializer):
 
 class BaseFavoriteShoppingCartSerializer(serializers.ModelSerializer):
     '''Базовый сериализатор для работы с рецептами.'''
+
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
@@ -305,16 +305,10 @@ class SubscribeUserSerializer(FoodgramUserSerializer):
     def get_recipes(self, obj):
         request = self.context.get('request')
         recipes = obj.recipes.all()
-        if limit := request.query_params.get('recipes_limit'):
-            try:
-                limit = int(limit)
-                if limit <= 0:
-                    raise ValueError(
-                        'recipes_limit должен быть положительным числом')
-                recipes = recipes[:limit]
-            except ValueError:
-                raise serializers.ValidationError(
-                    'recipes_limit должен быть числом')
+        if (
+            limit := request.query_params.get('recipes_limit')
+        ) and limit.isdigit():
+            recipes = recipes[:int(limit)]
         serializer = RecipeSubscribeSerializer(recipes,
                                                many=True,
                                                read_only=True,
