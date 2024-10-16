@@ -15,7 +15,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
 SERVER_IP = os.getenv('SERVER_IP')
 SERVER_DOMAIN = os.getenv('SERVER_DOMAIN')
 
-DEBUG = bool(os.getenv('DEBUG'))
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', SERVER_IP, SERVER_DOMAIN]
 
@@ -81,7 +81,7 @@ SQLITE_DATABASE = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-DATABASES = POSTGRES_DATABASE if os.getenv('POSTGRES_BASE_CHOICE', 'False').lower() == 'true' else SQLITE_DATABASE
+DATABASES = POSTGRES_DATABASE if os.getenv('POSTGRES_BASE_CHOICE', 'False') == 'True' else SQLITE_DATABASE
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -111,7 +111,7 @@ USE_TZ = True
 
 
 STATIC_URL = '/static/'
-STATIC_ROOT = '/collected_static'
+STATIC_ROOT = 'BASE_DIR/collected_static'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = '/media'
