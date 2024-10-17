@@ -145,8 +145,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = self.get_object()
         shortened_url = ShortenedURL.objects.filter(recipe=recipe).first()
         if not shortened_url:
-            original_url = request.build_absolute_uri(
-                recipe.get_absolute_url())
+            original_url = request.META.get('HTTP_REFERER')
+            if not original_url:
+                original_url = request.build_absolute_uri(
+                    recipe.get_absolute_url()[4:])
             shortened_url = ShortenedURL(original_url=original_url,
                                          recipe=recipe)
             shortened_url.save()
