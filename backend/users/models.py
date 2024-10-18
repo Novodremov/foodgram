@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from users.constants import (MAX_EMAIL_LENGTH, MAX_NAME_LENGTH,
-                             MAX_USERNAME_LENGTH, MAX_SURNAME_LENGTH)
+                             MAX_SURNAME_LENGTH, MAX_USERNAME_LENGTH)
 from users.validators import validate_username
 
 
@@ -16,7 +16,6 @@ class FoodgramUser(AbstractUser):
         max_length=MAX_USERNAME_LENGTH,
         unique=True,
         verbose_name='Логин',
-        # включил валидацию на 'me' в валидатор
         validators=[validate_username],
     )
     email = models.EmailField(

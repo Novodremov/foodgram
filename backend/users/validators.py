@@ -1,4 +1,5 @@
 import re
+
 from django.core.exceptions import ValidationError
 
 from users.constants import CURRENT_USER_ENDPOINT

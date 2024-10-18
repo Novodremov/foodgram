@@ -1,8 +1,8 @@
 import tempfile
 
 from django.contrib.auth import get_user_model
-from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Sum
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404, redirect
 from rest_framework import viewsets, status
@@ -18,13 +18,13 @@ from api.mixins import TagIngredientMixin
 from api.paginators import FoodgramPageNumberPagination
 from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (IngredientGetSerializer,
+                             RecipeFavoritePostSerializer,
                              RecipeGetSerializer,
                              RecipePostSerializer,
-                             RecipeFavoritePostSerializer,
                              RecipeShoppingCartPostSerializer,
                              ShortenedURLSerializer,
                              TagGetSerializer,)
-from recipes.models import (Ingredient, IngredientRecipe, Favorite, Recipe,
+from recipes.models import (Favorite, Ingredient, IngredientRecipe, Recipe,
                             ShoppingCart, ShortenedURL, Tag)
 
 

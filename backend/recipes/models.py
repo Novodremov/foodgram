@@ -7,8 +7,8 @@ from django.db import models
 from django.urls import reverse
 
 from recipes.constants import (MAX_INGREDIENT_NAME_LENGTH,
-                               MAX_RECIPE_NAME_LENGTH, MAX_TAG_NAME_LENGTH,
-                               MAX_SLUG_LENGTH, MAX_UNIT_LENGTH,
+                               MAX_RECIPE_NAME_LENGTH, MAX_SLUG_LENGTH,
+                               MAX_TAG_NAME_LENGTH, MAX_UNIT_LENGTH,
                                MIN_COOKING_TIME, MIN_INGREDIENT_AMOUNT,
                                NUMBER_OF_CHARS_FOR_SHORT_URL,
                                STR_VIEW_LENGTH)
