@@ -12,7 +12,7 @@ services:
 
   backend:
     container_name: foodgram-back
-    build: ../backend
+    image: nvdrmv/foodgram_backend
     volumes:
       - static:/backend_static/
       - media:/media/
@@ -23,7 +23,7 @@ services:
 
   frontend:
     container_name: foodgram-front
-    build: ../frontend
+    image: nvdrmv/foodgram_frontend
     volumes:
       - ../frontend/:/app/result_build/
 

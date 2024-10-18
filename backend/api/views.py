@@ -12,6 +12,7 @@ from rest_framework.permissions import (IsAuthenticated,
                                         SAFE_METHODS)
 from rest_framework.response import Response
 
+from api.constants import SIZE_OF_PREFIX
 from api.filters import IngredientFilter, RecipeFilter
 from api.mixins import TagIngredientMixin
 from api.paginators import FoodgramPageNumberPagination
@@ -148,7 +149,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             original_url = request.META.get('HTTP_REFERER')
             if not original_url:
                 original_url = request.build_absolute_uri(
-                    recipe.get_absolute_url()[4:])
+                    recipe.get_absolute_url()[SIZE_OF_PREFIX:])
             shortened_url = ShortenedURL(original_url=original_url,
                                          recipe=recipe)
             shortened_url.save()

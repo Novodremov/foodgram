@@ -8,7 +8,7 @@
 Фронтэнд на JavaScript с использованием React.
 
 
-<!-- Проект можно посмотреть по адресу: https:// -->
+[Посмотреть проект](https://foodgram2024.zapto.org)
 
 ## Уровни доступа пользователей:  
 
@@ -71,11 +71,10 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-- Создайте файл .env в папке проекта, пример представлен в файле ./infra/.env.example  
+- Создайте файл .env в папке проекта, пример представлен в файле /infra/.env.example  
 
 
 - Перейдите в папку с файлом manage.py
-
 
 - Примените миграции:
 ```
@@ -93,9 +92,10 @@ python manage.py collectstatic
 python manage.py createsuperuser
 ```
 
-- Заполните базу данных (загрузите фикстуры) командой:
+- Заполните базу данных (загрузите фикстуры) командой
+(при необходимости файл foodgram_fixture.json можно заменить своими фикстурами):
 ```
-python manage.py loaddata ../data/foodgram_ingredients_tags_fixture.json 
+python manage.py loaddata foodgram_fixture.json 
 ```
 
 - Запустите проект:
@@ -108,16 +108,17 @@ python manage.py runserver
 http://127.0.0.1:8000/api/docs/
 ```
 
-<!-- ## Запуск проекта в контейнерах:
+## Запуск проекта в контейнерах:
 
 - Установите docker и docker-compose
 
+- Создайте директорию foodgram/
+
+- Создайте в этой директории файл .env, пример представлен в проекте: infra/.env.example  
+
+- Скопируйте директорию проекта docs/ в директорию foodgram/
 
 - Создайте директорию foodgram/infra
-
-
-- Создайте в этой директории файл .env, пример представлен в файле ./infra/.env.example  
-
 
 - Скопируйте файл проекта docker-compose.production.yml в директорию foodgram/infra и разверните контейнеры командой:
 ```
@@ -129,14 +130,14 @@ sudo docker compose -f docker-compose.production.yml up -d --build
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
 ```
 
-- Заполните базу данных (загрузите фикстуры) командой:
-```
-python manage.py loaddata ../data/foodgram_ingredients_tags_fixture.json
-```
-
 - Соберите статику:
 ```
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
+```
+
+- Заполните базу данных (загрузите фикстуры) командой:
+```
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py loaddata foodgram_fixture.json
 ```
 
 - Создайте суперпользователя:
@@ -144,11 +145,10 @@ sudo docker compose -f docker-compose.production.yml exec backend python manage.
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py createsuperuser
 ```
 
-
 - Для остановки проекта выполните команду:
 ```
 sudo docker compose -f docker-compose.production.yml down
-``` -->
+```
 
 ## Список эндпоинтов API:
 
@@ -174,7 +174,7 @@ sudo docker compose -f docker-compose.production.yml down
 
 Подробную информацию по эндпоинтам API можно посмотреть по адресу:
 ```
-http://localhost/api/docs/
+http://{ip сервера}/api/docs/
 ```
 
 ### Автор:  
